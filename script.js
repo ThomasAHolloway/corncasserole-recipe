@@ -72,5 +72,113 @@ title.addEventListener("mouseenter", () => {
 title.addEventListener("mouseleave", () => {
     title.style.textDecoration = "none";
 });
+// ----- SELECT ELEMENTS -----
+const holes = document.querySelectorAll('.hole'); // array of holes
+const scoreDisplay = document.getElementById('score'); // score span
+const missesDisplay = document.getElementById('misses'); // optional misses span
+const timeDisplay = document.getElementById('time'); // countdown timer
+const startButton = document.getElementById('start'); // start button
+
+// ----- GAME STATE VARIABLES -----
+let score = 0;
+let misses = 0;
+let timeLeft = 30; // game duration in seconds
+let moleTimerIds = []; // array to track active mole timeouts
+let countdownTimerId = null;
+let gameActive = false;
+
+// ----- FUNCTIONS -----
+
+// Reset game state
+function resetGame() {
+    score = 0;
+    misses = 0;
+    timeLeft = 30;
+    scoreDisplay.textContent = score;
+    missesDisplay.textContent = misses;
+    timeDisplay.textContent = timeLeft;
+    clearAllMoles();
+}
+
+// Start the game
+function startGame() {
+    if (gameActive) return; // prevent double start
+    gameActive = true;
+    resetGame();
+    spawnMole(); // start spawning moles
+    countdownTimerId = setInterval(updateTimer, 1000); // start countdown
+}
+
+// End the game
+function endGame() {
+    gameActive = false;
+    clearInterval(countdownTimerId);
+    clearAllMoles();
+    alert(`Game Over!\nScore: ${score}\nMisses: ${misses}`);
+}
+
+// Update timer every second
+function updateTimer() {
+    timeLeft--;
+    timeDisplay.textContent = timeLeft;
+    if (timeLeft <= 0) {
+        endGame();
+    }
+}
+
+// Spawn a mole in a random hole
+function spawnMole() {
+    if (!gameActive) return;
+
+    const availableHoles = Array.from(holes).filter(hole => !hole.classList.contains('mole'));
+    if (availableHoles.length === 0) return; // all holes occupied
+
+    const randomHole = availableHoles[Math.floor(Math.random() * availableHoles.length)];
+    randomHole.classList.add('mole');
+
+    // Mole disappears after 800ms if not clicked
+    const moleTimeout = setTimeout(() => {
+        if (randomHole.classList.contains('mole')) {
+            randomHole.classList.remove('mole');
+            misses++;
+            missesDisplay.textContent = misses;
+        }
+    }, 800);
+
+    moleTimerIds.push(moleTimeout);
+
+    // Spawn next mole after random delay (300-1000ms)
+    const nextMoleTimeout = setTimeout(spawnMole, Math.random() * 700 + 300);
+    moleTimerIds.push(nextMoleTimeout);
+}
+
+// Clear all active mole timeouts and remove mole classes
+function clearAllMoles() {
+    moleTimerIds.forEach(id => clearTimeout(id));
+    moleTimerIds = [];
+    holes.forEach(hole => hole.classList.remove('mole'));
+}
+
+// ----- EVENT LISTENERS -----
+
+// Start button
+startButton.addEventListener('click', startGame);
+
+// Handle mole clicks (hit)
+holes.forEach(hole => {
+    hole.addEventListener('click', () => {
+        if (!gameActive) return;
+        if (hole.classList.contains('mole')) {
+            hole.classList.remove('mole');
+            score++;
+            scoreDisplay.textContent = score;
+        } else {
+            // optional: count as miss if clicking empty hole
+            misses++;
+            missesDisplay.textContent = misses;
+        }
+    });
+});
+
 
 
